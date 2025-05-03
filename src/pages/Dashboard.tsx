@@ -1,10 +1,10 @@
-import React from 'react';
-import { Clock, BookOpen, Award, Users } from 'lucide-react';
-import StatisticCard from '../components/StatisticCard';
-import ProgressCard from '../components/ProgressCard';
-import UpcomingEventCard from '../components/UpcomingEventCard';
-import ModuleCard from '../components/ModuleCard';
-import { modules } from '../data/modules';
+import React from "react";
+import { Clock, BookOpen, Award, Users } from "lucide-react";
+import StatisticCard from "../components/StatisticCard";
+import ProgressCard from "../components/ProgressCard";
+import UpcomingEventCard from "../components/UpcomingEventCard";
+import ModuleCard from "../components/ModuleCard";
+import { modules } from "../data/modules";
 
 interface DashboardProps {
   onSelectModule: (moduleId: string) => void;
@@ -13,13 +13,18 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ onSelectModule }) => {
   // Filter modules for recommended and in progress
   const recommendedModules = modules.slice(0, 3);
-  const inProgressModules = modules.filter(module => module.completionPercentage > 0 && module.completionPercentage < 100).slice(0, 2);
+  const inProgressModules = modules
+    .filter(
+      (module) =>
+        module.completionPercentage > 0 && module.completionPercentage < 100,
+    )
+    .slice(0, 2);
 
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        
+
         {/* Statistics Row */}
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatisticCard
@@ -53,40 +58,56 @@ const Dashboard: React.FC<DashboardProps> = ({ onSelectModule }) => {
             {/* Continue Learning Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Continue Learning</h2>
+                <h2 className="text-lg font-medium text-gray-900">
+                  Continue Learning
+                </h2>
                 <button className="text-sm font-medium text-blue-600 hover:text-blue-500">
                   View All
                 </button>
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                {inProgressModules.length > 0 ? (
-                  inProgressModules.map((module) => (
-                    <ModuleCard key={module.id} module={module} onSelect={onSelectModule} />
-                  ))
-                ) : (
-                  recommendedModules.slice(0, 2).map((module) => (
-                    <ModuleCard key={module.id} module={module} onSelect={onSelectModule} />
-                  ))
-                )}
+                {inProgressModules.length > 0
+                  ? inProgressModules.map((module) => (
+                      <ModuleCard
+                        key={module.id}
+                        module={module}
+                        onSelect={onSelectModule}
+                      />
+                    ))
+                  : recommendedModules
+                      .slice(0, 2)
+                      .map((module) => (
+                        <ModuleCard
+                          key={module.id}
+                          module={module}
+                          onSelect={onSelectModule}
+                        />
+                      ))}
               </div>
             </div>
-            
+
             {/* Recommended Modules Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Recommended For You</h2>
+                <h2 className="text-lg font-medium text-gray-900">
+                  Recommended For You
+                </h2>
                 <button className="text-sm font-medium text-blue-600 hover:text-blue-500">
                   View All
                 </button>
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {recommendedModules.map((module) => (
-                  <ModuleCard key={module.id} module={module} onSelect={onSelectModule} />
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    onSelect={onSelectModule}
+                  />
                 ))}
               </div>
             </div>
           </div>
-          
+
           {/* Right Sidebar */}
           <div className="space-y-6">
             <ProgressCard />

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Bell, Search } from 'lucide-react';
-import { user } from '../data/user';
+import React from "react";
+import { Bell, Search } from "lucide-react";
+import { user } from "../data/user";
 
 const DashboardHeader: React.FC = () => {
   return (
@@ -15,7 +15,10 @@ const DashboardHeader: React.FC = () => {
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                    <Search
+                      className="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
                   </div>
                   <input
                     id="search"
@@ -42,7 +45,9 @@ const DashboardHeader: React.FC = () => {
               <div>
                 <div className="flex items-center">
                   <div className="hidden lg:flex lg:flex-col lg:items-end lg:mr-4">
-                    <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {user.name}
+                    </span>
                     <span className="text-xs text-gray-500">{user.email}</span>
                   </div>
                   <img

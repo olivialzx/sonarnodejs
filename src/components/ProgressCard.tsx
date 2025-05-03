@@ -1,11 +1,15 @@
-import React from 'react';
-import { TrendingUp } from 'lucide-react';
-import { user } from '../data/user';
+import React from "react";
+import { TrendingUp } from "lucide-react";
+import { user } from "../data/user";
 
 const ProgressCard: React.FC = () => {
   const { progress } = user;
-  const modulePercentage = Math.round((progress.completedModules / progress.totalModules) * 100);
-  const lessonPercentage = Math.round((progress.completedLessons / progress.totalLessons) * 100);
+  const modulePercentage = Math.round(
+    (progress.completedModules / progress.totalModules) * 100,
+  );
+  const lessonPercentage = Math.round(
+    (progress.completedLessons / progress.totalLessons) * 100,
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
@@ -17,7 +21,9 @@ const ProgressCard: React.FC = () => {
         <div className="mt-4 space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-500">Modules Completed</span>
+              <span className="text-sm font-medium text-gray-500">
+                Modules Completed
+              </span>
               <span className="text-sm font-semibold text-gray-900">
                 {progress.completedModules}/{progress.totalModules}
               </span>
@@ -28,12 +34,16 @@ const ProgressCard: React.FC = () => {
                 style={{ width: `${modulePercentage}%` }}
               ></div>
             </div>
-            <div className="mt-1 text-xs font-medium text-blue-500">{modulePercentage}% Complete</div>
+            <div className="mt-1 text-xs font-medium text-blue-500">
+              {modulePercentage}% Complete
+            </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-500">Lessons Completed</span>
+              <span className="text-sm font-medium text-gray-500">
+                Lessons Completed
+              </span>
               <span className="text-sm font-semibold text-gray-900">
                 {progress.completedLessons}/{progress.totalLessons}
               </span>
@@ -44,7 +54,9 @@ const ProgressCard: React.FC = () => {
                 style={{ width: `${lessonPercentage}%` }}
               ></div>
             </div>
-            <div className="mt-1 text-xs font-medium text-blue-500">{lessonPercentage}% Complete</div>
+            <div className="mt-1 text-xs font-medium text-blue-500">
+              {lessonPercentage}% Complete
+            </div>
           </div>
         </div>
       </div>
