@@ -3,8 +3,9 @@ import { describe, it, expect } from "vitest";
 import App from "./App";
 
 describe("App component", () => {
-  it("renders a header with text", () => {
+  it("renders the dashboard heading", () => {
     render(<App />);
-    expect(screen.getByText(/dashboard/i)).toBeDefined();
+    const heading = screen.getByRole("heading", { name: /dashboard/i });
+    expect(heading).toBeInTheDocument();
   });
 });
