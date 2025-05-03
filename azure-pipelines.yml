@@ -143,9 +143,9 @@ stages:
           displayName: 'Publish SonarCloud Results'
           inputs:
             pollingTimeoutSec: '300'
-        - script: |
-              ls -la coverage/
-              displayName: 'Check Coverage Output'
+        # - script: |
+        #       ls -la coverage/
+        #       displayName: 'Check Coverage Output'
 
 
 # stages:
