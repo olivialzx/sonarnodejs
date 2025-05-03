@@ -117,8 +117,8 @@ stages:
               reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
 
   - stage: CodeQuality
-  displayName: Code Quality Analysis
-  jobs:
+    displayName: Code Quality Analysis
+    jobs:
     - job: SonarQube
       steps:
         - task: SonarCloudPrepare@1
