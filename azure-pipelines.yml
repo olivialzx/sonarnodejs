@@ -151,10 +151,10 @@ stages:
   
 
 
-  stages:
-    - stage: Build
-      displayName: 'Build & Test'
-      jobs:
+  
+  - stage: Build
+    displayName: 'Build & Test'
+    jobs:
         - job: BuildTest
           displayName: 'Build and Test'
           pool:
@@ -193,10 +193,10 @@ stages:
                 publishLocation: 'pipeline'
               displayName: 'Publish Build Artifacts'
 
-    - stage: Security
-      displayName: 'Security Scan'
-      dependsOn: []
-      jobs:
+  - stage: Security
+    displayName: 'Security Scan'
+    dependsOn: []
+    jobs:
         - job: SecurityScan
           displayName: 'Security Scanning'
           pool:
