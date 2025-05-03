@@ -117,17 +117,17 @@ stages:
               reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
 
   - stage: CodeQuality
-    displayName: Code Quality Analysis
-    jobs:
+  displayName: Code Quality Analysis
+  jobs:
     - job: SonarQube
       steps:
         - task: SonarCloudPrepare@1
           inputs:
-            SonarCloud: 'sonarnodejs' # SonarCloud service connection
-            organization: 'bkrrajmali' # Your SonarCloud organization key
+            SonarCloud: 'sonarnodejs' # Service connection name
+            organization: 'bkrrajmali' # Your SonarCloud org key
             scannerMode: 'CLI'
-            projectName: 'sonarnodejs' # Project name in SonarCloud
-            projectKey: 'bkrrajmali_sonarnodejs' # Project key in SonarCloud
+            projectName: 'sonarnodejs'
+            projectKey: 'bkrrajmali_sonarnodejs'
             cliSources: '.'
             extraProperties: |
               sonar.sourceEncoding=UTF-8
@@ -135,6 +135,14 @@ stages:
               sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
               sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
               sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
+
+        - task: SonarCloudAnalyze@1
+          displayName: 'Run SonarCloud Analysis'
+
+        - task: SonarCloudPublish@1
+          displayName: 'Publish SonarCloud Results'
+          inputs:
+            pollingTimeoutSec: '300'
   
 
 
