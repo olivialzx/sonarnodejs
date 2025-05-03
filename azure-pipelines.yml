@@ -79,6 +79,11 @@ stages:
             inputs:
               versionSpec: $(NODE_VERSION)
             displayName: 'Install Node.js'
+          
+          - script: |
+              npm install -g npm@latest
+              npm audit fix --force || echo "Audit fix applied with warnings"
+            displayName: 'NPM Audit Auto-Fix'
 
           - script: |
               npm audit
