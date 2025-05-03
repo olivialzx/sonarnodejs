@@ -116,7 +116,26 @@ stages:
               summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
               reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
 
-
+  - stage: CodeQuality
+    displayName: Code Quality Analysis
+    jobs:
+    - job: SonarQube
+      steps:
+      - task: SonarQubePrepare@5
+        inputs:
+          SonarQube: 'sonarnodejs'
+          scannerMode: 'CLI'
+          configMode: 'manual'
+          cliProjectKey: 'bkrrajmali_sonarnodejs'
+          cliProjectName: 'sonarnodejs'
+          cliSources: '.'
+          extraProperties: |
+            sonar.sourceEncoding=UTF-8
+            sonar.javascript.lcov.reportPaths=coverage/lcov.info
+            sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+            sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+            sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
+  
 
 
 # stages:
