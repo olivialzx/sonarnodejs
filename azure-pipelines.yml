@@ -1,3 +1,4 @@
+
 trigger:
   batch: true
   branches:
@@ -18,20 +19,21 @@ pr:
     include:
       - main
       - develop
+
 variables:
-   npm_config_cache: $(Pipeline.Workspace)/.npm
-   DOCKER_BUILDKIT: 1
-   NODE_VERSION: '20.x'
-   VM_IMAGE: 'ubuntu-latest'
--  group: NodeJSVariables
-       
+  npm_config_cache: $(Pipeline.Workspace)/.npm
+  DOCKER_BUILDKIT: 1
+  NODE_VERSION: '20.x'
+  VM_IMAGE: 'ubuntu-latest'
+- group: NodeJSVariables
 
 stages:
+  # 1. Code Validation
   - stage: CodeValidation
-    displayName: Code Validation
+    displayName: 'Code Validation'
     jobs:
       - job: Validation
-        displayName: Code Quality Checks
+        displayName: 'Code Quality Checks'
         pool:
           vmImage: $(VM_IMAGE)
         steps:
@@ -64,21 +66,31 @@ stages:
           - script: |
               echo "Running Prettier formatting check..."
               npx prettier --check "src/**/*.{ts,tsx}" || {
-                echo "❌ Prettier formatting issues found. Run 'npx prettier --write \"src/**/*.{ts,tsx}\"' locally to fix."
+                echo "❌ Prettier formatting issues found."
                 exit 1
               }
             displayName: 'Check Prettier Formatting'
 
-          - script: npm audit --production
-            displayName: 'Security Audit'
-            continueOnError: true
-
-  - stage: Test
-    displayName: Test Stage
+  # 2. Basic Security Audit (fast feedback before deeper scans)
+  - stage: SecurityAudit
+    displayName: 'Security Audit (Pre-Test)'
     dependsOn: CodeValidation
     jobs:
+      - job: BasicAudit
+        displayName: 'NPM Audit'
+        pool:
+          vmImage: $(VM_IMAGE)
+        steps:
+          - script: npm audit --production
+            displayName: 'NPM Production Audit'
+            continueOnError: true
+
+  # 3. Unit Testing
+  - stage: Test
+    displayName: 'Unit Tests'
+    dependsOn: SecurityAudit
+    jobs:
       - job: UnitTests
-        displayName: Run Unit Tests
         pool:
           vmImage: $(VM_IMAGE)
         steps:
@@ -93,19 +105,18 @@ stages:
               restoreKeys: |
                 npm | "$(Agent.OS)"
               path: ~/.npm
-            displayName: 'Restore npm modules from cache'
+            displayName: 'Restore npm cache'
 
           - script: |
               npm ci
               npx vitest run --reporter=junit > test-results.xml
-            displayName: 'Run Unit Tests with JUnit Output'
+            displayName: 'Run Unit Tests'
 
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: '**/test-results.xml'
               mergeTestResults: true
-              testRunTitle: 'Unit Tests'
 
           - task: PublishCodeCoverageResults@1
             inputs:
@@ -113,10 +124,15 @@ stages:
               summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
               reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
 
+  # 4. SonarCloud Code Quality (requires test coverage)
   - stage: CodeQuality
-    displayName: Code Quality Analysis
+    displayName: 'Code Quality Analysis'
+    dependsOn: Test
     jobs:
-      - job: SonarQube
+      - job: SonarScan
+        displayName: 'SonarCloud Analysis'
+        pool:
+          vmImage: $(VM_IMAGE)
         steps:
           - task: SonarCloudPrepare@1
             inputs:
@@ -129,29 +145,28 @@ stages:
               extraProperties: |
                 sonar.sourceEncoding=UTF-8
                 sonar.javascript.lcov.reportPaths=coverage/lcov.info
-                sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-                sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-                sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
+                sonar.coverage.exclusions=**/*.test.ts,**/*.spec.tsx
+                sonar.test.inclusions=**/*.test.ts,**/*.spec.tsx
+                sonar.exclusions=**/node_modules/**,**/coverage/**,**/dist/**
 
           - task: SonarCloudAnalyze@1
-
           - task: SonarCloudPublish@1
-            displayName: 'Publish SonarCloud Results'
             inputs:
               pollingTimeoutSec: '300'
 
+  # 5. Build App & Docker Image
   - stage: Build
-    displayName: 'Build & Test'
+    displayName: 'Build and Containerize'
+    dependsOn: CodeQuality
     jobs:
-      - job: BuildTest
-        displayName: 'Build and Test'
+      - job: BuildJob
+        displayName: 'Build + Docker'
         pool:
           vmImage: $(VM_IMAGE)
         steps:
           - task: NodeTool@0
             inputs:
               versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
 
           - task: Cache@2
             inputs:
@@ -159,83 +174,49 @@ stages:
               restoreKeys: |
                 npm | "$(Agent.OS)"
               path: $(npm_config_cache)
-            displayName: 'Cache npm packages'
 
           - script: npm ci
             displayName: 'Install Dependencies'
 
-          - script: npm run lint
-            displayName: 'Run ESLint'
-            continueOnError: true
-
           - script: npm run build
-            displayName: 'Build Application'
+            displayName: 'Build App'
 
           - task: Docker@2
             inputs:
-             containerRegistry: 'dockernode'
-             repository: 'devopsnodejs/sonarnodejs'
-             command: 'buildAndPush'
-             Dockerfile: '**/Dockerfile'
+              containerRegistry: 'dockernode'
+              repository: 'devopsnodejs/sonarnodejs'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
 
           - task: PublishPipelineArtifact@1
             inputs:
               targetPath: '$(System.DefaultWorkingDirectory)/dist'
               artifact: 'dist'
-              publishLocation: 'pipeline'
-            displayName: 'Publish Build Artifacts'
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '20.x'
-            displayName: 'Install Node.js'
 
+  # 6. Deep Security: Snyk & Container Vulnerability Scans
+  - stage: SecurityScan
+    displayName: 'Container & App Security Scans'
+    dependsOn: Build
+    jobs:
+      - job: DeepScan
+        displayName: 'Snyk & Container Scans'
+        pool:
+          vmImage: $(VM_IMAGE)
+        steps:
           - script: |
               npm install -g snyk
               snyk auth $(SNYK_TOKEN)
               snyk test
-              snyk container test $(containerRegistry)/$(imageRepository):$(tag)
-            displayName: 'Run Snyk Security Scan'
+            displayName: 'Snyk App Scan'
             env:
-            SNYK_TOKEN: $(SNYK_TOKEN)
+              SNYK_TOKEN: $(SNYK_TOKEN)
 
-    - task: ContainerScan@0
-      inputs:
-        dockerRegistryServiceConnection: $(dockerRegistryServiceConnection)
-        repository: $(imageRepository)
-        tag: $(tag)
-      displayName: 'Container Scan'
-
-  - stage: Security
-    displayName: 'Security Scan'
-    dependsOn: []
-    jobs:
-      - job: SecurityScan
-        displayName: 'Security Scanning'
-        pool:
-          vmImage: $(VM_IMAGE)
-        steps:
-          - task: NodeTool@0
+          - task: ContainerScan@0
             inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
-
-          - script: |
-              npm install -g npm@latest
-              npm audit fix --force || echo "Audit fix applied with warnings"
-            displayName: 'NPM Audit Auto-Fix'
-
-          - script: |
-              npm audit fix --force || echo "Audit fix applied with warnings"
-            displayName: 'NPM Security Audit'
-            continueOnError: true
-
-          - task: SnykSecurityScan@1
-            inputs:
-              serviceConnectionEndpoint: 'Snyk'
-              testType: 'app'
-              monitorWhen: 'always'
-              failOnIssues: false
-            displayName: 'Snyk Security Scan'
+              dockerRegistryServiceConnection: $(dockerRegistryServiceConnection)
+              repository: $(imageRepository)
+              tag: $(tag)
+            displayName: 'Container Vulnerability Scan'
 
 
   # - stage: DeployDev
