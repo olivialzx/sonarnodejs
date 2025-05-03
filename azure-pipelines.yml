@@ -19,6 +19,17 @@ pr:
       - main
       - develop
 
+variables:
+  - name: npm_config_cache
+    value: $(Pipeline.Workspace)/.npm
+  - name: DOCKER_BUILDKIT
+    value: 1
+  - name: NODE_VERSION
+    value: '20.x'
+  - name: VM_IMAGE
+    value: 'ubuntu-latest'
+  - group: NodeJSVariables
+
 stages:
   - stage: CodeValidation
     displayName: Code Validation
@@ -175,29 +186,23 @@ stages:
               repository: 'devopsnodejs/sonarnodejs'
               command: 'buildAndPush'
               Dockerfile: '**/Dockerfile'
+              tags: latest
+            displayName: 'Build and Push Docker Image'
+
+          - script: |
+              npm install -g snyk
+              snyk auth $(SNYK_TOKEN)
+              snyk container test --docker devopsnodejs/sonarnodejs:latest
+            displayName: 'Run Snyk Container Vulnerability Scan'
+            env:
+              SNYK_TOKEN: $(SNYK_TOKEN)
 
           - task: PublishPipelineArtifact@1
             inputs:
               targetPath: '$(System.DefaultWorkingDirectory)/dist'
               artifact: 'dist'
               publishLocation: 'pipeline'
-            displayName: 'Publish Build Artifacts'
-
-          - script: |
-              npm install -g snyk
-              snyk auth $(SNYK_TOKEN)
-              snyk test
-            displayName: 'Run Snyk Security Scan'
-            env:
-              SNYK_TOKEN: $(SNYK_TOKEN)
-
-          - script: |
-              npm install -g snyk
-              snyk auth $(SNYK_TOKEN)
-              snyk container test $(imageRepository):$(tag)
-            displayName: 'Snyk Docker Image Vulnerability Scan'
-            env:
-              SNYK_TOKEN: $(SNYK_TOKEN)
+              displayName: 'Publish Build Artifacts'
 
   - stage: Security
     displayName: 'Security Scan'
