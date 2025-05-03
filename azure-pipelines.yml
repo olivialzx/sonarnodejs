@@ -196,6 +196,8 @@ stages:
             displayName: 'Run Snyk Container Vulnerability Scan'
             env:
               SNYK_TOKEN: $(SNYK_TOKEN)
+              SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
+              SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
 
           - task: PublishPipelineArtifact@1
             inputs:
