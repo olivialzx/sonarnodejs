@@ -24,7 +24,7 @@ variables:
   NODE_VERSION: '20.x'
   VM_IMAGE: 'ubuntu-latest'
   # Correct way to reference variable group
-  - group: NodeJSVariables
+- group: NodeJSVariables
 
        
 
