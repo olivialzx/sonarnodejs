@@ -18,12 +18,13 @@ pr:
     include:
       - main
       - develop
-
 variables:
-  npm_config_cache: $(Pipeline.Workspace)/.npm
-  DOCKER_BUILDKIT: 1
-  NODE_VERSION: '20.x'
-  VM_IMAGE: 'ubuntu-latest'
+   npm_config_cache: $(Pipeline.Workspace)/.npm
+   DOCKER_BUILDKIT: 1
+   NODE_VERSION: '20.x'
+   VM_IMAGE: 'ubuntu-latest'
+-  group: NodeJSVariables
+       
 
 stages:
   - stage: CodeValidation
@@ -183,6 +184,26 @@ stages:
               artifact: 'dist'
               publishLocation: 'pipeline'
             displayName: 'Publish Build Artifacts'
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '20.x'
+            displayName: 'Install Node.js'
+
+          - script: |
+              npm install -g snyk
+              snyk auth $(SNYK_TOKEN)
+              snyk test
+              snyk container test $(containerRegistry)/$(imageRepository):$(tag)
+            displayName: 'Run Snyk Security Scan'
+            env:
+            SNYK_TOKEN: $(SNYK_TOKEN)
+
+    - task: ContainerScan@0
+      inputs:
+        dockerRegistryServiceConnection: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        tag: $(tag)
+      displayName: 'Container Scan'
 
   - stage: Security
     displayName: 'Security Scan'
