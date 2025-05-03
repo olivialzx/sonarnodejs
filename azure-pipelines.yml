@@ -136,8 +136,13 @@ stages:
               sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
               sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
 
-        - task: SonarCloudAnalyze@1
-          displayName: 'Run SonarCloud Analysis'
+        - task: SonarCloudPrepare@3
+          inputs:
+            SonarQube: 'sonarnodejs'
+            organization: 'bkrrajmali'
+            scannerMode: 'cli'
+            cliScannerVersion: '6.2.0.4584'
+            configMode: 'file'
 
         - task: SonarCloudPublish@1
           displayName: 'Publish SonarCloud Results'
