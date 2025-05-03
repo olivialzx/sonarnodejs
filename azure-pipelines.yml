@@ -151,79 +151,79 @@ stages:
   
 
 
-# stages:
-#   - stage: Build
-#     displayName: 'Build & Test'
-#     jobs:
-#       - job: BuildTest
-#         displayName: 'Build and Test'
-#         pool:
-#           vmImage: 'ubuntu-latest'
-#         steps:
-#           - task: NodeTool@0
-#             inputs:
-#               versionSpec: $(NODE_VERSION)
-#             displayName: 'Install Node.js'
+  stages:
+    - stage: Build
+      displayName: 'Build & Test'
+      jobs:
+        - job: BuildTest
+          displayName: 'Build and Test'
+          pool:
+            vmImage: 'ubuntu-latest'
+          steps:
+            - task: NodeTool@0
+              inputs:
+                versionSpec: $(NODE_VERSION)
+              displayName: 'Install Node.js'
 
-#           - task: Cache@2
-#             inputs:
-#               key: 'npm | "$(Agent.OS)" | package-lock.json'
-#               restoreKeys: |
-#                 npm | "$(Agent.OS)"
-#               path: $(npm_config_cache)
-#             displayName: 'Cache npm packages'
+            - task: Cache@2
+              inputs:
+                key: 'npm | "$(Agent.OS)" | package-lock.json'
+                restoreKeys: |
+                  npm | "$(Agent.OS)"
+                path: $(npm_config_cache)
+              displayName: 'Cache npm packages'
 
-#           - script: |
-#               npm ci
-#             displayName: 'Install Dependencies'
+            - script: |
+                npm ci
+              displayName: 'Install Dependencies'
 
-#           - script: |
-#               npm run lint
-#             displayName: 'Run ESLint'
-#             continueOnError: true
+            - script: |
+                npm run lint
+              displayName: 'Run ESLint'
+              continueOnError: true
 
-#           - script: |
-#               npm run build
-#             displayName: 'Build Application'
+            - script: |
+                npm run build
+              displayName: 'Build Application'
 
-#           - task: PublishPipelineArtifact@1
-#             inputs:
-#               targetPath: '$(System.DefaultWorkingDirectory)/dist'
-#               artifact: 'dist'
-#               publishLocation: 'pipeline'
-#             displayName: 'Publish Build Artifacts'
+            - task: PublishPipelineArtifact@1
+              inputs:
+                targetPath: '$(System.DefaultWorkingDirectory)/dist'
+                artifact: 'dist'
+                publishLocation: 'pipeline'
+              displayName: 'Publish Build Artifacts'
 
-#   - stage: Security
-#     displayName: 'Security Scan'
-#     dependsOn: []
-#     jobs:
-#       - job: SecurityScan
-#         displayName: 'Security Scanning'
-#         pool:
-#           vmImage: 'ubuntu-latest'
-#         steps:
-#           - task: NodeTool@0
-#             inputs:
-#               versionSpec: $(NODE_VERSION)
-#             displayName: 'Install Node.js'
-          
-#           - script: |
-#               npm install -g npm@latest
-#               npm audit fix --force || echo "Audit fix applied with warnings"
-#             displayName: 'NPM Audit Auto-Fix'
+    - stage: Security
+      displayName: 'Security Scan'
+      dependsOn: []
+      jobs:
+        - job: SecurityScan
+          displayName: 'Security Scanning'
+          pool:
+            vmImage: 'ubuntu-latest'
+          steps:
+            - task: NodeTool@0
+              inputs:
+                versionSpec: $(NODE_VERSION)
+              displayName: 'Install Node.js'
+            
+            - script: |
+                npm install -g npm@latest
+                npm audit fix --force || echo "Audit fix applied with warnings"
+              displayName: 'NPM Audit Auto-Fix'
 
-#           - script: |
-#               npm audit fix --force || echo "Audit fix applied with warnings"
-#             displayName: 'NPM Security Audit'
-#             continueOnError: true
+            - script: |
+                npm audit fix --force || echo "Audit fix applied with warnings"
+              displayName: 'NPM Security Audit'
+              continueOnError: true
 
-#           - task: SnykSecurityScan@1
-#             inputs:
-#               serviceConnectionEndpoint: 'Snyk'
-#               testType: 'app'
-#               monitorWhen: 'always'
-#               failOnIssues: false
-#             displayName: 'Snyk Security Scan'
+            - task: SnykSecurityScan@1
+              inputs:
+                serviceConnectionEndpoint: 'Snyk'
+                testType: 'app'
+                monitorWhen: 'always'
+                failOnIssues: false
+              displayName: 'Snyk Security Scan'
 
   # - stage: DeployDev
   #   displayName: 'Deploy to Development'
