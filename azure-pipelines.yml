@@ -63,7 +63,11 @@ stages:
             displayName: 'Run ESLint'
 
           - script: |
-              npx prettier --check "src/**/*.{ts,tsx}"
+              echo "Running Prettier formatting check..."
+              npx prettier --check "src/**/*.{ts,tsx}" || {
+                echo "❌ Prettier formatting issues found. Run 'npx prettier --write \"src/**/*.{ts,tsx}\"' locally to fix."
+                exit 1
+              }
             displayName: 'Check Prettier Formatting'
 
           - script: |
