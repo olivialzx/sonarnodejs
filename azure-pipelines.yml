@@ -23,7 +23,7 @@ variables:
   npm_config_cache: $(Pipeline.Workspace)/.npm
   DOCKER_BUILDKIT: 1
   NODE_VERSION: '20.x'
-  vmImageName: 'ubuntu-24.04'
+  VM_IMAGE: 'ubuntu-latest'  # 'ubuntu-22.04' or 'ubuntu-latest' recommended
 
 stages:
   - stage: CodeValidation
@@ -32,11 +32,11 @@ stages:
       - job: Validation
         displayName: Code Quality Checks
         pool:
-          vmImage: $(vmImageName)
+          vmImage: $(VM_IMAGE)
         steps:
           - task: NodeTool@0
             inputs:
-              versionSpec: '20.x'
+              versionSpec: $(NODE_VERSION)
             displayName: 'Install Node.js'
 
           - script: |
@@ -82,11 +82,11 @@ stages:
       - job: UnitTests
         displayName: Run Unit Tests
         pool:
-          vmImage: $(vmImageName)
+          vmImage: $(VM_IMAGE)
         steps:
           - task: NodeTool@0
             inputs:
-              versionSpec: '20.x'
+              versionSpec: $(NODE_VERSION)
             displayName: 'Install Node.js'
 
           - task: Cache@2
@@ -95,17 +95,18 @@ stages:
               restoreKeys: |
                 npm | "$(Agent.OS)"
               path: ~/.npm
-            displayName: 'Cache npm modules'
+            displayName: 'Restore npm modules from cache'
 
           - script: |
+              echo "Running unit tests with JUnit output..."
               npm ci
-               npm run test
-            displayName: 'Run Unit Tests'
+              npx vitest run --reporter=junit > test-results.xml
+            displayName: 'Run Unit Tests with JUnit Output'
 
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: '**/junit.xml'
+              testResultsFiles: '**/test-results.xml'
               mergeTestResults: true
               testRunTitle: 'Unit Tests'
 
