@@ -121,7 +121,7 @@ stages:
     jobs:
     - job: SonarQube
       steps:
-        - task: SonarQube@6
+        - task: SonarQube
           inputs:
             SonarCloud: 'sonarnodejs' # Service connection name
             organization: 'bkrrajmali' # Your SonarCloud org key
