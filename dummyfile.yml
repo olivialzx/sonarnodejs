@@ -19,11 +19,13 @@ pr:
       - main
       - develop
 variables:
-   npm_config_cache: $(Pipeline.Workspace)/.npm
-   DOCKER_BUILDKIT: 1
-   NODE_VERSION: '20.x'
-   VM_IMAGE: 'ubuntu-latest'
--  group: NodeJSVariables
+  npm_config_cache: $(Pipeline.Workspace)/.npm
+  DOCKER_BUILDKIT: 1
+  NODE_VERSION: '20.x'
+  VM_IMAGE: 'ubuntu-latest'
+  # Correct way to reference variable group
+  - group: NodeJSVariables
+
        
 
 stages:
