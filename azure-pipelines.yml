@@ -91,67 +91,67 @@ stages:
               projectName: '$(Build.Repository.Name)'
             displayName: 'WhiteSource Scan'
 
-  - stage: DeployDev
-    displayName: 'Deploy to Development'
-    dependsOn: 
-      - Build
-      - Security
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
-    variables:
-      - group: DevSecrets
-    jobs:
-      - deployment: DeployDev
-        displayName: 'Deploy to Dev Environment'
-        environment: 'development'
-        pool:
-          vmImage: 'ubuntu-latest'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - download: current
-                  artifact: dist
+  # - stage: DeployDev
+  #   displayName: 'Deploy to Development'
+  #   dependsOn: 
+  #     - Build
+  #     - Security
+  #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  #   variables:
+  #     - group: DevSecrets
+  #   jobs:
+  #     - deployment: DeployDev
+  #       displayName: 'Deploy to Dev Environment'
+  #       environment: 'development'
+  #       pool:
+  #         vmImage: 'ubuntu-latest'
+  #       strategy:
+  #         runOnce:
+  #           deploy:
+  #             steps:
+  #               - download: current
+  #                 artifact: dist
                 
-                - task: AzureWebApp@1
-                  inputs:
-                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
-                    appName: '$(DEV_APP_NAME)'
-                    package: '$(Pipeline.Workspace)/dist/**/*.zip'
-                    deploymentMethod: 'auto'
+  #               - task: AzureWebApp@1
+  #                 inputs:
+  #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
+  #                   appName: '$(DEV_APP_NAME)'
+  #                   package: '$(Pipeline.Workspace)/dist/**/*.zip'
+  #                   deploymentMethod: 'auto'
 
-  - stage: DeployProd
-    displayName: 'Deploy to Production'
-    dependsOn: 
-      - Build
-      - Security
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-    variables:
-      - group: ProdSecrets
-    jobs:
-      - deployment: DeployProd
-        displayName: 'Deploy to Production Environment'
-        environment: 'production'
-        pool:
-          vmImage: 'ubuntu-latest'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - download: current
-                  artifact: dist
+  # - stage: DeployProd
+  #   displayName: 'Deploy to Production'
+  #   dependsOn: 
+  #     - Build
+  #     - Security
+  #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  #   variables:
+  #     - group: ProdSecrets
+  #   jobs:
+  #     - deployment: DeployProd
+  #       displayName: 'Deploy to Production Environment'
+  #       environment: 'production'
+  #       pool:
+  #         vmImage: 'ubuntu-latest'
+  #       strategy:
+  #         runOnce:
+  #           deploy:
+  #             steps:
+  #               - download: current
+  #                 artifact: dist
                 
-                - task: AzureWebApp@1
-                  inputs:
-                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
-                    appName: '$(PROD_APP_NAME)'
-                    package: '$(Pipeline.Workspace)/dist/**/*.zip'
-                    deploymentMethod: 'auto'
+  #               - task: AzureWebApp@1
+  #                 inputs:
+  #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
+  #                   appName: '$(PROD_APP_NAME)'
+  #                   package: '$(Pipeline.Workspace)/dist/**/*.zip'
+  #                   deploymentMethod: 'auto'
                     
-                - task: AzureAppServiceManage@0
-                  inputs:
-                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
-                    Action: 'Swap Slots'
-                    WebAppName: '$(PROD_APP_NAME)'
-                    SourceSlot: 'staging'
-                    SwapWithProduction: true
-                  condition: succeeded()
+  #               - task: AzureAppServiceManage@0
+  #                 inputs:
+  #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
+  #                   Action: 'Swap Slots'
+  #                   WebAppName: '$(PROD_APP_NAME)'
+  #                   SourceSlot: 'staging'
+  #                   SwapWithProduction: true
+  #                 condition: succeeded()
