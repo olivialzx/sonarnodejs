@@ -136,7 +136,7 @@ stages:
               sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
               sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
 
-        - task: SonarCloudPrepare@3
+        - task: SonarCloudAnalyze@1
           inputs:
             SonarQube: 'sonarnodejs'
             organization: 'bkrrajmali'
