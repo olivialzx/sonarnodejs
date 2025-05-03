@@ -18,15 +18,14 @@ pr:
     include:
       - main
       - develop
+
 variables:
   npm_config_cache: $(Pipeline.Workspace)/.npm
   DOCKER_BUILDKIT: 1
   NODE_VERSION: '20.x'
   VM_IMAGE: 'ubuntu-latest'
   # Correct way to reference variable group
-- group: NodeJSVariables
-
-       
+  - group: NodeJSVariables
 
 stages:
   - stage: CodeValidation
@@ -109,10 +108,10 @@ stages:
               mergeTestResults: true
               testRunTitle: 'Unit Tests'
 
-          - task: PublishCodeCoverageResults@1
+          - task: PublishCodeCoverageResults@2
             inputs:
-              codeCoverageTool: 'Cobertura'
-              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              codeCoverageTool: 'lcov'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/lcov.info'
               reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
 
   - stage: CodeQuality
@@ -120,27 +119,20 @@ stages:
     jobs:
       - job: SonarQube
         steps:
-          - task: SonarCloudPrepare@1
+          - task: SonarQube@6
             inputs:
-              SonarCloud: 'sonarnodejs'
-              organization: 'bkrrajmali'
-              scannerMode: 'CLI'
-              projectName: 'sonarnodejs'
+              SonarQube: 'sonarnodejs'
               projectKey: 'bkrrajmali_sonarnodejs'
-              cliSources: '.'
+              projectName: 'sonarnodejs'
+              scannerMode: 'CLI'
+              configFilePath: 'sonar-project.properties'
               extraProperties: |
+                sonar.sources=.
                 sonar.sourceEncoding=UTF-8
                 sonar.javascript.lcov.reportPaths=coverage/lcov.info
                 sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
                 sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
                 sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
-
-          - task: SonarCloudAnalyze@1
-
-          - task: SonarCloudPublish@1
-            displayName: 'Publish SonarCloud Results'
-            inputs:
-              pollingTimeoutSec: '300'
 
   - stage: Build
     displayName: 'Build & Test'
@@ -175,10 +167,10 @@ stages:
 
           - task: Docker@2
             inputs:
-             containerRegistry: 'dockernode'
-             repository: 'devopsnodejs/sonarnodejs'
-             command: 'buildAndPush'
-             Dockerfile: '**/Dockerfile'
+              containerRegistry: 'dockernode'
+              repository: 'devopsnodejs/sonarnodejs'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
 
           - task: PublishPipelineArtifact@1
             inputs:
@@ -186,6 +178,7 @@ stages:
               artifact: 'dist'
               publishLocation: 'pipeline'
             displayName: 'Publish Build Artifacts'
+
           - task: NodeTool@0
             inputs:
               versionSpec: '20.x'
@@ -198,14 +191,14 @@ stages:
               snyk container test $(containerRegistry)/$(imageRepository):$(tag)
             displayName: 'Run Snyk Security Scan'
             env:
-            SNYK_TOKEN: $(SNYK_TOKEN)
+              SNYK_TOKEN: $(SNYK_TOKEN)
 
-    - task: ContainerScan@0
-      inputs:
-        dockerRegistryServiceConnection: $(dockerRegistryServiceConnection)
-        repository: $(imageRepository)
-        tag: $(tag)
-      displayName: 'Container Scan'
+          - task: ContainerScan@0
+            inputs:
+              dockerRegistryServiceConnection: $(dockerRegistryServiceConnection)
+              repository: $(imageRepository)
+              tag: $(tag)
+            displayName: 'Container Scan'
 
   - stage: Security
     displayName: 'Security Scan'
