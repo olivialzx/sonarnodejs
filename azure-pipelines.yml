@@ -121,20 +121,20 @@ stages:
     jobs:
     - job: SonarQube
       steps:
-      - task: SonarQubePrepare@5
-        inputs:
-          SonarQube: 'sonarnodejs'
-          scannerMode: 'CLI'
-          configMode: 'manual'
-          cliProjectKey: 'bkrrajmali_sonarnodejs'
-          cliProjectName: 'sonarnodejs'
-          cliSources: '.'
-          extraProperties: |
-            sonar.sourceEncoding=UTF-8
-            sonar.javascript.lcov.reportPaths=coverage/lcov.info
-            sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-            sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-            sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
+        - task: SonarCloudPrepare@1
+          inputs:
+            SonarCloud: 'sonarnodejs' # SonarCloud service connection
+            organization: 'bkrrajmali' # Your SonarCloud organization key
+            scannerMode: 'CLI'
+            projectName: 'sonarnodejs' # Project name in SonarCloud
+            projectKey: 'bkrrajmali_sonarnodejs' # Project key in SonarCloud
+            cliSources: '.'
+            extraProperties: |
+              sonar.sourceEncoding=UTF-8
+              sonar.javascript.lcov.reportPaths=coverage/lcov.info
+              sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+              sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+              sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
   
 
 
