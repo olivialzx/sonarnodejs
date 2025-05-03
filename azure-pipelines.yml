@@ -23,7 +23,7 @@ variables:
   npm_config_cache: $(Pipeline.Workspace)/.npm
   DOCKER_BUILDKIT: 1
   NODE_VERSION: '20.x'
-  VM_IMAGE: 'ubuntu-latest'  # 'ubuntu-22.04' or 'ubuntu-latest' recommended
+  VM_IMAGE: 'ubuntu-latest'
 
 stages:
   - stage: CodeValidation
@@ -54,12 +54,10 @@ stages:
               path: ~/.npm
             displayName: 'Cache npm modules'
 
-          - script: |
-              npm ci --no-audit
+          - script: npm ci --no-audit
             displayName: 'Install Dependencies'
 
-          - script: |
-              npx eslint "src/**/*.{ts,tsx}" --max-warnings=0
+          - script: npx eslint "src/**/*.{ts,tsx}" --max-warnings=0
             displayName: 'Run ESLint'
 
           - script: |
@@ -70,8 +68,7 @@ stages:
               }
             displayName: 'Check Prettier Formatting'
 
-          - script: |
-              npm audit --production
+          - script: npm audit --production
             displayName: 'Security Audit'
             continueOnError: true
 
@@ -98,7 +95,6 @@ stages:
             displayName: 'Restore npm modules from cache'
 
           - script: |
-              echo "Running unit tests with JUnit output..."
               npm ci
               npx vitest run --reporter=junit > test-results.xml
             displayName: 'Run Unit Tests with JUnit Output'
@@ -119,111 +115,111 @@ stages:
   - stage: CodeQuality
     displayName: Code Quality Analysis
     jobs:
-    - job: SonarQube
-      steps:
-        - task: SonarCloudPrepare@1
-          inputs:
-            SonarCloud: 'sonarnodejs' # Service connection name
-            organization: 'bkrrajmali' # Your SonarCloud org key
-            scannerMode: 'CLI'
-            projectName: 'sonarnodejs'
-            projectKey: 'bkrrajmali_sonarnodejs'
-            cliSources: '.'
-            extraProperties: |
-              sonar.sourceEncoding=UTF-8
-              sonar.javascript.lcov.reportPaths=coverage/lcov.info
-              sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-              sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-              sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
+      - job: SonarQube
+        steps:
+          - task: SonarCloudPrepare@1
+            inputs:
+              SonarCloud: 'sonarnodejs'
+              organization: 'bkrrajmali'
+              scannerMode: 'CLI'
+              projectName: 'sonarnodejs'
+              projectKey: 'bkrrajmali_sonarnodejs'
+              cliSources: '.'
+              extraProperties: |
+                sonar.sourceEncoding=UTF-8
+                sonar.javascript.lcov.reportPaths=coverage/lcov.info
+                sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+                sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+                sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
 
-        - task: SonarCloudAnalyze@1
-          inputs:
-            SonarQube: 'sonarnodejs'
-            organization: 'bkrrajmali'
-            scannerMode: 'cli'
-            cliScannerVersion: '6.2.0.4584'
-            configMode: 'file'
+          - task: SonarCloudAnalyze@1
 
-        - task: SonarCloudPublish@1
-          displayName: 'Publish SonarCloud Results'
-          inputs:
-            pollingTimeoutSec: '300'
-  
+          - task: SonarCloudPublish@1
+            displayName: 'Publish SonarCloud Results'
+            inputs:
+              pollingTimeoutSec: '300'
 
-
-  
   - stage: Build
     displayName: 'Build & Test'
     jobs:
-        - job: BuildTest
-          displayName: 'Build and Test'
-          pool:
-            vmImage: 'ubuntu-latest'
-          steps:
-            - task: NodeTool@0
-              inputs:
-                versionSpec: $(NODE_VERSION)
-              displayName: 'Install Node.js'
+      - job: BuildTest
+        displayName: 'Build and Test'
+        pool:
+          vmImage: $(VM_IMAGE)
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+            displayName: 'Install Node.js'
 
-            - task: Cache@2
-              inputs:
-                key: 'npm | "$(Agent.OS)" | package-lock.json'
-                restoreKeys: |
-                  npm | "$(Agent.OS)"
-                path: $(npm_config_cache)
-              displayName: 'Cache npm packages'
+          - task: Cache@2
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+            displayName: 'Cache npm packages'
 
-            - script: |
-                npm ci
-              displayName: 'Install Dependencies'
+          - script: npm ci
+            displayName: 'Install Dependencies'
 
-            - script: |
-                npm run lint
-              displayName: 'Run ESLint'
-              continueOnError: true
+          - script: npm run lint
+            displayName: 'Run ESLint'
+            continueOnError: true
 
-            - script: |
-                npm run build
-              displayName: 'Build Application'
+          - script: npm run build
+            displayName: 'Build Application'
 
-            - task: PublishPipelineArtifact@1
-              inputs:
-                targetPath: '$(System.DefaultWorkingDirectory)/dist'
-                artifact: 'dist'
-                publishLocation: 'pipeline'
-              displayName: 'Publish Build Artifacts'
+          - task: Docker@2
+            displayName: 'Build & Push Docker Image'
+            inputs:
+              containerRegistry: 'dockerregnodejs'
+              repository: 'bkrrajmali/sonarnodejs'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
+              tags: |
+                $(Build.BuildId)
+                latest
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/dist'
+              artifact: 'dist'
+              publishLocation: 'pipeline'
+            displayName: 'Publish Build Artifacts'
 
   - stage: Security
     displayName: 'Security Scan'
     dependsOn: []
     jobs:
-        - job: SecurityScan
-          displayName: 'Security Scanning'
-          pool:
-            vmImage: 'ubuntu-latest'
-          steps:
-            - task: NodeTool@0
-              inputs:
-                versionSpec: $(NODE_VERSION)
-              displayName: 'Install Node.js'
-            
-            - script: |
-                npm install -g npm@latest
-                npm audit fix --force || echo "Audit fix applied with warnings"
-              displayName: 'NPM Audit Auto-Fix'
+      - job: SecurityScan
+        displayName: 'Security Scanning'
+        pool:
+          vmImage: $(VM_IMAGE)
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+            displayName: 'Install Node.js'
 
-            - script: |
-                npm audit fix --force || echo "Audit fix applied with warnings"
-              displayName: 'NPM Security Audit'
-              continueOnError: true
+          - script: |
+              npm install -g npm@latest
+              npm audit fix --force || echo "Audit fix applied with warnings"
+            displayName: 'NPM Audit Auto-Fix'
 
-            - task: SnykSecurityScan@1
-              inputs:
-                serviceConnectionEndpoint: 'Snyk'
-                testType: 'app'
-                monitorWhen: 'always'
-                failOnIssues: false
-              displayName: 'Snyk Security Scan'
+          - script: |
+              npm audit fix --force || echo "Audit fix applied with warnings"
+            displayName: 'NPM Security Audit'
+            continueOnError: true
+
+          - task: SnykSecurityScan@1
+            inputs:
+              serviceConnectionEndpoint: 'Snyk'
+              testType: 'app'
+              monitorWhen: 'always'
+              failOnIssues: false
+            displayName: 'Snyk Security Scan'
+
 
   # - stage: DeployDev
   #   displayName: 'Deploy to Development'
