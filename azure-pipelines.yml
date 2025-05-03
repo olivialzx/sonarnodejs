@@ -121,7 +121,7 @@ stages:
     jobs:
     - job: SonarQube
       steps:
-        - task: SonarQube
+        - task: SonarCloudPrepare@1
           inputs:
             SonarCloud: 'sonarnodejs' # Service connection name
             organization: 'bkrrajmali' # Your SonarCloud org key
@@ -136,16 +136,14 @@ stages:
               sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
               sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
 
-        - task: PublishCodeCoverageResults@1
+        - task: SonarCloudAnalyze@1
           displayName: 'Run SonarCloud Analysis'
 
-        - task: PublishCodeCoverageResults@2
+        - task: SonarCloudPublish@1
           displayName: 'Publish SonarCloud Results'
           inputs:
             pollingTimeoutSec: '300'
-        # - script: |
-        #       ls -la coverage/
-        #       displayName: 'Check Coverage Output'
+  
 
 
 # stages:
