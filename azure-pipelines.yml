@@ -85,11 +85,13 @@ stages:
             displayName: 'NPM Security Audit'
             continueOnError: true
 
-          - task: WhiteSource@21
+          - task: SnykSecurityScan@1
             inputs:
-              cwd: '$(System.DefaultWorkingDirectory)'
-              projectName: '$(Build.Repository.Name)'
-            displayName: 'WhiteSource Scan'
+              serviceConnectionEndpoint: 'Snyk'
+              testType: 'app'
+              monitorWhen: 'always'
+              failOnIssues: false
+            displayName: 'Snyk Security Scan'
 
   # - stage: DeployDev
   #   displayName: 'Deploy to Development'
