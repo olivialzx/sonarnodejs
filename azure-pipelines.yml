@@ -190,7 +190,7 @@ stages:
             displayName: 'Build and Push Docker Image'
           
           - script: |
-              docker login $(CONTAINER_REGISTRY) -u $(REGISTRY_USERNAME) -p $(REGISTRY_PASSWORD)
+              docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
             env:
               SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
               SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
