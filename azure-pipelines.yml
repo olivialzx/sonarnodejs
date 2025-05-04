@@ -256,6 +256,12 @@ stages:
               monitorWhen: 'always'
               failOnIssues: false
             displayName: 'Snyk Security Scan'
+          - task: dependency-check-build-task@6
+            inputs:
+              projectName: 'React App'
+              scanPath: '$(Build.SourcesDirectory)'
+              format: 'HTML'
+              uploadReports: true
 
 
   # - stage: DeployDev
