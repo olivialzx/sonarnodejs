@@ -188,24 +188,41 @@ stages:
               Dockerfile: '**/Dockerfile'
               tags: latest
             displayName: 'Build and Push Docker Image'
-          
+          - task: Docker@2
+            inputs:
+                containerRegistry: 'dockernode'
+                repository: 'devopsnodejs/sonarnodejs'
+                command: 'build'
+                Dockerfile: '**/Dockerfile'
+                tags: 'latest'
           - script: |
-              docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
-            env:
-              SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
-              SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
-              CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)
-              displayName: 'Login to Docker Registry'
-
-          - script: |
-              npm install -g snyk
-              snyk auth $(SNYK_TOKEN)
-              snyk container test --docker devopsnodejs/sonarnodejs:latest
+                export SNYK_DOCKER_USERNAME=$(dockerUsername)
+                export SNYK_DOCKER_PASSWORD=$(dockerPassword)
+                npm install -g snyk
+                snyk auth $(SNYK_TOKEN)
+                snyk container test --docker devopsnodejs/sonarnodejs:latest
             displayName: 'Run Snyk Container Vulnerability Scan'
             env:
-              SNYK_TOKEN: $(SNYK_TOKEN)
-              SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
-              SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
+                SNYK_TOKEN: $(SNYK_TOKEN)
+                dockerUsername: $(dockerUsername)
+                dockerPassword: $(dockerPassword)
+          # - script: |
+          #     docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
+          #   env:
+          #     SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
+          #     SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
+          #     CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)
+          #     displayName: 'Login to Docker Registry'
+
+          # - script: |
+          #     npm install -g snyk
+          #     snyk auth $(SNYK_TOKEN)
+          #     snyk container test --docker devopsnodejs/sonarnodejs:latest
+          #   displayName: 'Run Snyk Container Vulnerability Scan'
+          #   env:
+          #     SNYK_TOKEN: $(SNYK_TOKEN)
+          #     SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
+          #     SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
 
           - task: PublishPipelineArtifact@1
             inputs:
