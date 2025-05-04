@@ -188,24 +188,18 @@ stages:
               Dockerfile: '**/Dockerfile'
               tags: latest
             displayName: 'Build and Push Docker Image'
-          - task: Docker@2
-            inputs:
-                containerRegistry: 'dockernode'
-                repository: 'devopsnodejs/sonarnodejs'
-                command: 'build'
-                Dockerfile: '**/Dockerfile'
-                tags: 'latest'
+
           - script: |
-                export SNYK_DOCKER_USERNAME=$(dockerUsername)
-                export SNYK_DOCKER_PASSWORD=$(dockerPassword)
-                npm install -g snyk
-                snyk auth $(SNYK_TOKEN)
-                snyk container test --docker devopsnodejs/sonarnodejs:latest
-            displayName: 'Run Snyk Container Vulnerability Scan'
+              docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
+              npm install -g snyk
+              snyk auth $(SNYK_TOKEN)
+              snyk container test --docker $(CONTAINER_REGISTRY)/devopsnodejs/sonarnodejs:latest
+            displayName: 'Run Snyk Container Scan'
             env:
-                SNYK_TOKEN: $(SNYK_TOKEN)
-                dockerUsername: $(dockerUsername)
-                dockerPassword: $(dockerPassword)
+              SNYK_TOKEN: $(SNYK_TOKEN)
+              dockerUsername: $(dockerUsername)  # Ensure these are set as secret variables
+              dockerPassword: $(dockerPassword)
+              CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)  # e.g., myregistry.azurecr.io
           # - script: |
           #     docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
           #   env:
