@@ -200,7 +200,7 @@ stages:
           - script: |
               npm install -g snyk
               snyk auth $(SNYK_TOKEN)
-              snyk container test devopsnodejs/sonarnodejs:latest
+              snyk container test --docker devopsnodejs/sonarnodejs:latest
             displayName: 'Run Snyk Container Vulnerability Scan'
             env:
               SNYK_TOKEN: $(SNYK_TOKEN)
