@@ -80,45 +80,45 @@ stages:
             displayName: 'Security Audit'
             continueOnError: true
 
-  # - stage: Test
-  #   displayName: Test Stage
-  #   dependsOn: CodeValidation
-  #   jobs:
-  #     - job: UnitTests
-  #       displayName: Run Unit Tests
-  #       pool:
-  #         vmImage: $(VM_IMAGE)
-  #       steps:
-  #         - task: NodeTool@0
-  #           inputs:
-  #             versionSpec: $(NODE_VERSION)
-  #           displayName: 'Install Node.js'
+  - stage: Test
+    displayName: Test Stage
+    dependsOn: CodeValidation
+    jobs:
+      - job: UnitTests
+        displayName: Run Unit Tests
+        pool:
+          vmImage: $(VM_IMAGE)
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+            displayName: 'Install Node.js'
 
-  #         - task: Cache@2
-  #           inputs:
-  #             key: 'npm | "$(Agent.OS)" | package-lock.json'
-  #             restoreKeys: |
-  #               npm | "$(Agent.OS)"
-  #             path: ~/.npm
-  #           displayName: 'Restore npm modules from cache'
+          - task: Cache@2
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: ~/.npm
+            displayName: 'Restore npm modules from cache'
 
-  #         - script: |
-  #             npm ci
-  #             npx vitest run --reporter=junit > test-results.xml
-  #           displayName: 'Run Unit Tests with JUnit Output'
+          - script: |
+              npm ci
+              npx vitest run --reporter=junit > test-results.xml
+            displayName: 'Run Unit Tests with JUnit Output'
 
-  #         - task: PublishTestResults@2
-  #           inputs:
-  #             testResultsFormat: 'JUnit'
-  #             testResultsFiles: '**/test-results.xml'
-  #             mergeTestResults: true
-  #             testRunTitle: 'Unit Tests'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/test-results.xml'
+              mergeTestResults: true
+              testRunTitle: 'Unit Tests'
 
-  #         - task: PublishCodeCoverageResults@1
-  #           inputs:
-  #             codeCoverageTool: 'Cobertura'
-  #             summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
-  #             reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
 
   # - stage: CodeQuality
   #   displayName: Code Quality Analysis
