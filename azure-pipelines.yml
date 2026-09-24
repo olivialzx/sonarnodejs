@@ -129,22 +129,6 @@ stages:
         pool:
           vmImage: $(VM_IMAGE)
         steps:
-          # - task: SonarCloudPrepare@4
-          #   inputs:
-          #     SonarQube: 'sonarnodejs'
-          #     organization: 'bkrrajmali'
-          #     scannerMode: 'cli'
-          #     projectName: 'sonarnodejs'
-          #     projectKey: 'bkrrajmali_sonarnodejs'
-          #     configMode: 'file'
-          #     cliSources: '.'
-          #     extraProperties: |
-          #       sonar.sourceEncoding=UTF-8
-          #       # sonar.javascript.lcov.reportPaths=coverage/lcov.info
-          #       sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-          #       sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-          #       sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
-
           - task: SonarCloudPrepare@3
             displayName: 'Prepare Sonar Cloud Analysis'
             inputs:
@@ -171,82 +155,82 @@ stages:
             inputs:
               pollingTimeoutSec: '300'
 
-  # - stage: Build
-  #   displayName: 'Build & Test'
-  #   dependsOn: CodeQuality
-  #   jobs:
-  #     - job: BuildTest
-  #       displayName: 'Build and Scan'
-  #       pool:
-  #         vmImage: $(VM_IMAGE)
-  #       steps:
-  #         - task: NodeTool@0
-  #           inputs:
-  #             versionSpec: $(NODE_VERSION)
-  #           displayName: 'Install Node.js'
+  - stage: Build
+    displayName: 'Build & Test'
+    dependsOn: CodeQuality
+    jobs:
+      - job: BuildTest
+        displayName: 'Build and Scan'
+        pool:
+          vmImage: $(VM_IMAGE)
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+            displayName: 'Install Node.js'
 
-  #         - task: Cache@2
-  #           inputs:
-  #             key: 'npm | "$(Agent.OS)" | package-lock.json'
-  #             restoreKeys: |
-  #               npm | "$(Agent.OS)"
-  #             path: $(npm_config_cache)
-  #           displayName: 'Cache npm packages'
+          - task: Cache@2
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+            displayName: 'Cache npm packages'
 
-  #         - script: npm ci
-  #           displayName: 'Install Dependencies'
+          - script: npm ci
+            displayName: 'Install Dependencies'
 
-  #         - script: npm run lint
-  #           displayName: 'Run ESLint'
-  #           continueOnError: true
+          - script: npm run lint
+            displayName: 'Run ESLint'
+            continueOnError: true
 
-  #         - script: npm run build
-  #           displayName: 'Build Application'
+          - script: npm run build
+            displayName: 'Build Application'
 
-  #         - task: Docker@2
-  #           inputs:
-  #             containerRegistry: 'dockernode'
-  #             repository: 'devopsnodejs/sonarnodejs'
-  #             command: 'buildAndPush'
-  #             Dockerfile: '**/Dockerfile'
-  #             tags: latest
-  #           displayName: 'Build and Push Docker Image'
+          - task: Docker@2
+            inputs:
+              containerRegistry: 'dockernode'
+              repository: 'devopsnodejs/sonarnodejs'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
+              tags: latest
+            displayName: 'Build and Push Docker Image'
 
-  #         - script: |
-  #             docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
-  #             npm install -g snyk
-  #             snyk auth $(SNYK_TOKEN)
-  #             snyk container test --docker $(CONTAINER_REGISTRY)/devopsnodejs/sonarnodejs:latest
-  #           displayName: 'Run Snyk Container Scan'
-  #           env:
-  #             SNYK_TOKEN: $(SNYK_TOKEN)
-  #             dockerUsername: $(dockerUsername)  # Ensure these are set as secret variables
-  #             dockerPassword: $(dockerPassword)
-  #             CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)  # e.g., myregistry.azurecr.io
-          # - script: |
-          #     docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
-          #   env:
-          #     SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
-          #     SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
-          #     CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)
-          #     displayName: 'Login to Docker Registry'
+          - script: |
+              docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
+              npm install -g snyk
+              snyk auth $(SNYK_TOKEN)
+              snyk container test --docker $(CONTAINER_REGISTRY)/devopsnodejs/sonarnodejs:latest
+            displayName: 'Run Snyk Container Scan'
+            env:
+              SNYK_TOKEN: $(SNYK_TOKEN)
+              dockerUsername: $(dockerUsername)  # Ensure these are set as secret variables
+              dockerPassword: $(dockerPassword)
+              CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)  # e.g., myregistry.azurecr.io
+          - script: |
+              docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
+            env:
+              SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
+              SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
+              CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)
+              displayName: 'Login to Docker Registry'
 
-          # - script: |
-          #     npm install -g snyk
-          #     snyk auth $(SNYK_TOKEN)
-          #     snyk container test --docker devopsnodejs/sonarnodejs:latest
-          #   displayName: 'Run Snyk Container Vulnerability Scan'
-          #   env:
-          #     SNYK_TOKEN: $(SNYK_TOKEN)
-          #     SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
-          #     SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
+          - script: |
+              npm install -g snyk
+              snyk auth $(SNYK_TOKEN)
+              snyk container test --docker devopsnodejs/sonarnodejs:latest
+            displayName: 'Run Snyk Container Vulnerability Scan'
+            env:
+              SNYK_TOKEN: $(SNYK_TOKEN)
+              SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
+              SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
 
-          # - task: PublishPipelineArtifact@1
-          #   inputs:
-          #     targetPath: '$(System.DefaultWorkingDirectory)/dist'
-          #     artifact: 'dist'
-          #     publishLocation: 'pipeline'
-          #     displayName: 'Publish Build Artifacts'
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/dist'
+              artifact: 'dist'
+              publishLocation: 'pipeline'
+              displayName: 'Publish Build Artifacts'
 
   # - stage: Security
   #   displayName: 'Security Scan'
