@@ -145,11 +145,12 @@ stages:
           #       sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
           #       sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
 
-          - task: SonarCloudPrepare@4
+          - task: SonarCloudPrepare@3
+            displayName: 'Prepare Sonar Cloud Analysis'
             inputs:
               SonarCloud: 'sonarnodejs'
               organization: 'bkrrajmali'
-              scannerMode: 'CLI'
+              scannerMode: 'cli'
               projectName: 'sonarnodejs'
               projectKey: 'bkrrajmali_sonarnodejs'
               cliSources: '.'
@@ -160,9 +161,12 @@ stages:
                 sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
                 sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
 
-          - task: SonarCloudAnalyze@1
+          - task: SonarCloudAnalyze@3
+            displayName: 'Run SonarCloud Analysis'
+            inputs:
+              jdkversion: JAVA_HOME_21_X64
 
-          - task: SonarCloudPublish@1
+          - task: SonarCloudPublish@3
             displayName: 'Publish SonarCloud Results'
             inputs:
               pollingTimeoutSec: '300'
