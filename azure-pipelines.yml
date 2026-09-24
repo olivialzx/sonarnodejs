@@ -120,36 +120,36 @@ stages:
               summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
               reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
 
-  # - stage: CodeQuality
-  #   displayName: Code Quality Analysis
-  #   dependsOn: Test
-  #   jobs:
-  #     - job: SonarQube
-  #       displayName: SonarCloud Analysis
-  #       pool:
-  #         vmImage: $(VM_IMAGE)
-  #       steps:
-  #         - task: SonarCloudPrepare@1
-  #           inputs:
-  #             SonarCloud: 'sonarnodejs'
-  #             organization: 'bkrrajmali'
-  #             scannerMode: 'CLI'
-  #             projectName: 'sonarnodejs'
-  #             projectKey: 'bkrrajmali_sonarnodejs'
-  #             cliSources: '.'
-  #             extraProperties: |
-  #               sonar.sourceEncoding=UTF-8
-  #               sonar.javascript.lcov.reportPaths=coverage/lcov.info
-  #               sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-  #               sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-  #               sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
+  - stage: CodeQuality
+    displayName: Code Quality Analysis
+    dependsOn: Test
+    jobs:
+      - job: SonarQube
+        displayName: SonarCloud Analysis
+        pool:
+          vmImage: $(VM_IMAGE)
+        steps:
+          - task: SonarCloudPrepare@1
+            inputs:
+              SonarCloud: 'sonarnodejs'
+              organization: 'bkrrajmali'
+              scannerMode: 'CLI'
+              projectName: 'sonarnodejs'
+              projectKey: 'bkrrajmali_sonarnodejs'
+              cliSources: '.'
+              extraProperties: |
+                sonar.sourceEncoding=UTF-8
+                sonar.javascript.lcov.reportPaths=coverage/lcov.info
+                sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+                sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+                sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
 
-  #         - task: SonarCloudAnalyze@1
+          - task: SonarCloudAnalyze@1
 
-  #         - task: SonarCloudPublish@1
-  #           displayName: 'Publish SonarCloud Results'
-  #           inputs:
-  #             pollingTimeoutSec: '300'
+          - task: SonarCloudPublish@1
+            displayName: 'Publish SonarCloud Results'
+            inputs:
+              pollingTimeoutSec: '300'
 
   # - stage: Build
   #   displayName: 'Build & Test'
