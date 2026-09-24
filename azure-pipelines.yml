@@ -50,13 +50,16 @@ stages:
                 npm install --package-lock-only --ignore-scripts
               fi
             displayName: 'Verify package-lock.json'
-
+          - script: |
+              npm config set cache "$(npm_config_cache)"
+              npm config get cache
+            displayName: ' Configure npm cache'
           - task: Cache@2
             inputs:
               key: 'npm | "$(Agent.OS)" | package-lock.json'
               restoreKeys: |
                 npm | "$(Agent.OS)"
-              path: ~/.npm
+              path: "$(npm_config_cache)"
             displayName: 'Cache npm modules'
 
           - script: npm ci --no-audit
