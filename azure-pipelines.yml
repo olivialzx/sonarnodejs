@@ -133,10 +133,10 @@ stages:
             displayName: 'Prepare Sonar Cloud Analysis'
             inputs:
               SonarCloud: 'sonarnodejs'
-              organization: 'bkrrajmali'
+              organization: 'bootcamp2'
               scannerMode: 'cli'
               projectName: 'sonarnodejs'
-              projectKey: 'bkrrajmali_sonarnodejs'
+              projectKey: ''
               cliSources: '.'
               extraProperties: |
                 sonar.sourceEncoding=UTF-8
