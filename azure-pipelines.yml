@@ -80,164 +80,12 @@ stages:
             displayName: 'Security Audit'
             continueOnError: true
 
-  - stage: Test
-    displayName: Test Stage
-    dependsOn: CodeValidation
-    jobs:
-      - job: UnitTests
-        displayName: Run Unit Tests
-        pool:
-          vmImage: $(VM_IMAGE)
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
-
-          - task: Cache@2
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package-lock.json'
-              restoreKeys: |
-                npm | "$(Agent.OS)"
-              path: ~/.npm
-            displayName: 'Restore npm modules from cache'
-
-          - script: |
-              npm ci
-              npx vitest run --reporter=junit > test-results.xml
-            displayName: 'Run Unit Tests with JUnit Output'
-
-          - task: PublishTestResults@2
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '**/test-results.xml'
-              mergeTestResults: true
-              testRunTitle: 'Unit Tests'
-
-          - task: PublishCodeCoverageResults@1
-            inputs:
-              codeCoverageTool: 'Cobertura'
-              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
-              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
-
-  - stage: CodeQuality
-    displayName: Code Quality Analysis
-    dependsOn: Test
-    jobs:
-      - job: SonarQube
-        displayName: SonarCloud Analysis
-        pool:
-          vmImage: $(VM_IMAGE)
-        steps:
-          - task: SonarCloudPrepare@3
-            displayName: 'Prepare Sonar Cloud Analysis'
-            inputs:
-              SonarCloud: 'sonarnodejs'
-              organization: 'bkrrajmali'
-              scannerMode: 'cli'
-              projectName: 'sonarnodejs'
-              projectKey: 'bkrrajmali_sonarnodejs'
-              cliSources: '.'
-              extraProperties: |
-                sonar.sourceEncoding=UTF-8
-                sonar.javascript.lcov.reportPaths=coverage/lcov.info
-                sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-                sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-                sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
-
-          - task: SonarCloudAnalyze@3
-            displayName: 'Run SonarCloud Analysis'
-            inputs:
-              jdkversion: JAVA_HOME_21_X64
-
-          - task: SonarCloudPublish@3
-            displayName: 'Publish SonarCloud Results'
-            inputs:
-              pollingTimeoutSec: '300'
-
-  - stage: Build
-    displayName: 'Build & Test'
-    dependsOn: CodeQuality
-    jobs:
-      - job: BuildTest
-        displayName: 'Build and Scan'
-        pool:
-          vmImage: $(VM_IMAGE)
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
-
-          - task: Cache@2
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package-lock.json'
-              restoreKeys: |
-                npm | "$(Agent.OS)"
-              path: $(npm_config_cache)
-            displayName: 'Cache npm packages'
-
-          - script: npm ci
-            displayName: 'Install Dependencies'
-
-          - script: npm run lint
-            displayName: 'Run ESLint'
-            continueOnError: true
-
-          - script: npm run build
-            displayName: 'Build Application'
-
-          - task: Docker@2
-            inputs:
-              containerRegistry: 'dockernode'
-              repository: 'devopsnodejs/sonarnodejs'
-              command: 'buildAndPush'
-              Dockerfile: '**/Dockerfile'
-              tags: latest
-            displayName: 'Build and Push Docker Image'
-
-          - script: |
-              docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
-              npm install -g snyk
-              snyk auth $(SNYK_TOKEN)
-              snyk container test --docker $(CONTAINER_REGISTRY)/devopsnodejs/sonarnodejs:latest
-            displayName: 'Run Snyk Container Scan'
-            env:
-              SNYK_TOKEN: $(SNYK_TOKEN)
-              dockerUsername: $(dockerUsername)  # Ensure these are set as secret variables
-              dockerPassword: $(dockerPassword)
-              CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)  # e.g., myregistry.azurecr.io
-          - script: |
-              docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
-            env:
-              SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
-              SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
-              CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)
-              displayName: 'Login to Docker Registry'
-
-          - script: |
-              npm install -g snyk
-              snyk auth $(SNYK_TOKEN)
-              snyk container test --docker devopsnodejs/sonarnodejs:latest
-            displayName: 'Run Snyk Container Vulnerability Scan'
-            env:
-              SNYK_TOKEN: $(SNYK_TOKEN)
-              SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
-              SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
-
-          - task: PublishPipelineArtifact@1
-            inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)/dist'
-              artifact: 'dist'
-              publishLocation: 'pipeline'
-              displayName: 'Publish Build Artifacts'
-
-  # - stage: Security
-  #   displayName: 'Security Scan'
-  #   dependsOn: Build
+  # - stage: Test
+  #   displayName: Test Stage
+  #   dependsOn: CodeValidation
   #   jobs:
-  #     - job: SecurityScan
-  #       displayName: 'Security Scanning'
+  #     - job: UnitTests
+  #       displayName: Run Unit Tests
   #       pool:
   #         vmImage: $(VM_IMAGE)
   #       steps:
@@ -246,92 +94,244 @@ stages:
   #             versionSpec: $(NODE_VERSION)
   #           displayName: 'Install Node.js'
 
-  #         - script: |
-  #             npm install -g npm@latest
-  #             npm audit fix --force || echo "Audit fix applied with warnings"
-  #           displayName: 'NPM Audit Auto-Fix'
+  #         - task: Cache@2
+  #           inputs:
+  #             key: 'npm | "$(Agent.OS)" | package-lock.json'
+  #             restoreKeys: |
+  #               npm | "$(Agent.OS)"
+  #             path: ~/.npm
+  #           displayName: 'Restore npm modules from cache'
 
   #         - script: |
-  #             npm audit fix --force || echo "Audit fix applied with warnings"
-  #           displayName: 'NPM Security Audit'
+  #             npm ci
+  #             npx vitest run --reporter=junit > test-results.xml
+  #           displayName: 'Run Unit Tests with JUnit Output'
+
+  #         - task: PublishTestResults@2
+  #           inputs:
+  #             testResultsFormat: 'JUnit'
+  #             testResultsFiles: '**/test-results.xml'
+  #             mergeTestResults: true
+  #             testRunTitle: 'Unit Tests'
+
+  #         - task: PublishCodeCoverageResults@1
+  #           inputs:
+  #             codeCoverageTool: 'Cobertura'
+  #             summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+  #             reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+
+  # - stage: CodeQuality
+  #   displayName: Code Quality Analysis
+  #   dependsOn: Test
+  #   jobs:
+  #     - job: SonarQube
+  #       displayName: SonarCloud Analysis
+  #       pool:
+  #         vmImage: $(VM_IMAGE)
+  #       steps:
+  #         - task: SonarCloudPrepare@3
+  #           displayName: 'Prepare Sonar Cloud Analysis'
+  #           inputs:
+  #             SonarCloud: 'sonarnodejs'
+  #             organization: 'bkrrajmali'
+  #             scannerMode: 'cli'
+  #             projectName: 'sonarnodejs'
+  #             projectKey: 'bkrrajmali_sonarnodejs'
+  #             cliSources: '.'
+  #             extraProperties: |
+  #               sonar.sourceEncoding=UTF-8
+  #               sonar.javascript.lcov.reportPaths=coverage/lcov.info
+  #               sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+  #               sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+  #               sonar.exclusions=**/node_modules/**,**/coverage/**,**/.next/**,**/dist/**
+
+  #         - task: SonarCloudAnalyze@3
+  #           displayName: 'Run SonarCloud Analysis'
+  #           inputs:
+  #             jdkversion: JAVA_HOME_21_X64
+
+  #         - task: SonarCloudPublish@3
+  #           displayName: 'Publish SonarCloud Results'
+  #           inputs:
+  #             pollingTimeoutSec: '300'
+
+  # - stage: Build
+  #   displayName: 'Build & Test'
+  #   dependsOn: CodeQuality
+  #   jobs:
+  #     - job: BuildTest
+  #       displayName: 'Build and Scan'
+  #       pool:
+  #         vmImage: $(VM_IMAGE)
+  #       steps:
+  #         - task: NodeTool@0
+  #           inputs:
+  #             versionSpec: $(NODE_VERSION)
+  #           displayName: 'Install Node.js'
+
+  #         - task: Cache@2
+  #           inputs:
+  #             key: 'npm | "$(Agent.OS)" | package-lock.json'
+  #             restoreKeys: |
+  #               npm | "$(Agent.OS)"
+  #             path: $(npm_config_cache)
+  #           displayName: 'Cache npm packages'
+
+  #         - script: npm ci
+  #           displayName: 'Install Dependencies'
+
+  #         - script: npm run lint
+  #           displayName: 'Run ESLint'
   #           continueOnError: true
 
-  #         - task: SnykSecurityScan@1
+  #         - script: npm run build
+  #           displayName: 'Build Application'
+
+  #         - task: Docker@2
   #           inputs:
-  #             serviceConnectionEndpoint: 'Snyk'
-  #             testType: 'app'
-  #             monitorWhen: 'always'
-  #             failOnIssues: false
-  #           displayName: 'Snyk Security Scan'
-  #         - task: dependency-check-build-task@6
+  #             containerRegistry: 'dockernode'
+  #             repository: 'devopsnodejs/sonarnodejs'
+  #             command: 'buildAndPush'
+  #             Dockerfile: '**/Dockerfile'
+  #             tags: latest
+  #           displayName: 'Build and Push Docker Image'
+
+  #         - script: |
+  #             docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
+  #             npm install -g snyk
+  #             snyk auth $(SNYK_TOKEN)
+  #             snyk container test --docker $(CONTAINER_REGISTRY)/devopsnodejs/sonarnodejs:latest
+  #           displayName: 'Run Snyk Container Scan'
+  #           env:
+  #             SNYK_TOKEN: $(SNYK_TOKEN)
+  #             dockerUsername: $(dockerUsername)  # Ensure these are set as secret variables
+  #             dockerPassword: $(dockerPassword)
+  #             CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)  # e.g., myregistry.azurecr.io
+  #         - script: |
+  #             docker login $(CONTAINER_REGISTRY) -u $(dockerUsername) -p $(dockerPassword)
+  #           env:
+  #             SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
+  #             SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
+  #             CONTAINER_REGISTRY: $(CONTAINER_REGISTRY)
+  #             displayName: 'Login to Docker Registry'
+
+  #         - script: |
+  #             npm install -g snyk
+  #             snyk auth $(SNYK_TOKEN)
+  #             snyk container test --docker devopsnodejs/sonarnodejs:latest
+  #           displayName: 'Run Snyk Container Vulnerability Scan'
+  #           env:
+  #             SNYK_TOKEN: $(SNYK_TOKEN)
+  #             SNYK_DOCKER_USERNAME: $(dockerUsername)   # Set as secret variable
+  #             SNYK_DOCKER_PASSWORD: $(dockerPassword)   # Set as secret variable
+
+  #         - task: PublishPipelineArtifact@1
   #           inputs:
-  #             projectName: 'React App'
-  #             scanPath: '$(Build.SourcesDirectory)'
-  #             format: 'HTML'
-  #             uploadReports: true
+  #             targetPath: '$(System.DefaultWorkingDirectory)/dist'
+  #             artifact: 'dist'
+  #             publishLocation: 'pipeline'
+  #             displayName: 'Publish Build Artifacts'
+
+  # # - stage: Security
+  # #   displayName: 'Security Scan'
+  # #   dependsOn: Build
+  # #   jobs:
+  # #     - job: SecurityScan
+  # #       displayName: 'Security Scanning'
+  # #       pool:
+  # #         vmImage: $(VM_IMAGE)
+  # #       steps:
+  # #         - task: NodeTool@0
+  # #           inputs:
+  # #             versionSpec: $(NODE_VERSION)
+  # #           displayName: 'Install Node.js'
+
+  # #         - script: |
+  # #             npm install -g npm@latest
+  # #             npm audit fix --force || echo "Audit fix applied with warnings"
+  # #           displayName: 'NPM Audit Auto-Fix'
+
+  # #         - script: |
+  # #             npm audit fix --force || echo "Audit fix applied with warnings"
+  # #           displayName: 'NPM Security Audit'
+  # #           continueOnError: true
+
+  # #         - task: SnykSecurityScan@1
+  # #           inputs:
+  # #             serviceConnectionEndpoint: 'Snyk'
+  # #             testType: 'app'
+  # #             monitorWhen: 'always'
+  # #             failOnIssues: false
+  # #           displayName: 'Snyk Security Scan'
+  # #         - task: dependency-check-build-task@6
+  # #           inputs:
+  # #             projectName: 'React App'
+  # #             scanPath: '$(Build.SourcesDirectory)'
+  # #             format: 'HTML'
+  # #             uploadReports: true
 
 
-  # - stage: DeployDev
-  #   displayName: 'Deploy to Development'
-  #   dependsOn: 
-  #     - Build
-  #     - Security
-  #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
-  #   variables:
-  #     - group: DevSecrets
-  #   jobs:
-  #     - deployment: DeployDev
-  #       displayName: 'Deploy to Dev Environment'
-  #       environment: 'development'
-  #       pool:
-  #         vmImage: 'ubuntu-latest'
-  #       strategy:
-  #         runOnce:
-  #           deploy:
-  #             steps:
-  #               - download: current
-  #                 artifact: dist
+  # # - stage: DeployDev
+  # #   displayName: 'Deploy to Development'
+  # #   dependsOn: 
+  # #     - Build
+  # #     - Security
+  # #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  # #   variables:
+  # #     - group: DevSecrets
+  # #   jobs:
+  # #     - deployment: DeployDev
+  # #       displayName: 'Deploy to Dev Environment'
+  # #       environment: 'development'
+  # #       pool:
+  # #         vmImage: 'ubuntu-latest'
+  # #       strategy:
+  # #         runOnce:
+  # #           deploy:
+  # #             steps:
+  # #               - download: current
+  # #                 artifact: dist
                 
-  #               - task: AzureWebApp@1
-  #                 inputs:
-  #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
-  #                   appName: '$(DEV_APP_NAME)'
-  #                   package: '$(Pipeline.Workspace)/dist/**/*.zip'
-  #                   deploymentMethod: 'auto'
+  # #               - task: AzureWebApp@1
+  # #                 inputs:
+  # #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
+  # #                   appName: '$(DEV_APP_NAME)'
+  # #                   package: '$(Pipeline.Workspace)/dist/**/*.zip'
+  # #                   deploymentMethod: 'auto'
 
-  # - stage: DeployProd
-  #   displayName: 'Deploy to Production'
-  #   dependsOn: 
-  #     - Build
-  #     - Security
-  #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  #   variables:
-  #     - group: ProdSecrets
-  #   jobs:
-  #     - deployment: DeployProd
-  #       displayName: 'Deploy to Production Environment'
-  #       environment: 'production'
-  #       pool:
-  #         vmImage: 'ubuntu-latest'
-  #       strategy:
-  #         runOnce:
-  #           deploy:
-  #             steps:
-  #               - download: current
-  #                 artifact: dist
+  # # - stage: DeployProd
+  # #   displayName: 'Deploy to Production'
+  # #   dependsOn: 
+  # #     - Build
+  # #     - Security
+  # #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  # #   variables:
+  # #     - group: ProdSecrets
+  # #   jobs:
+  # #     - deployment: DeployProd
+  # #       displayName: 'Deploy to Production Environment'
+  # #       environment: 'production'
+  # #       pool:
+  # #         vmImage: 'ubuntu-latest'
+  # #       strategy:
+  # #         runOnce:
+  # #           deploy:
+  # #             steps:
+  # #               - download: current
+  # #                 artifact: dist
                 
-  #               - task: AzureWebApp@1
-  #                 inputs:
-  #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
-  #                   appName: '$(PROD_APP_NAME)'
-  #                   package: '$(Pipeline.Workspace)/dist/**/*.zip'
-  #                   deploymentMethod: 'auto'
+  # #               - task: AzureWebApp@1
+  # #                 inputs:
+  # #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
+  # #                   appName: '$(PROD_APP_NAME)'
+  # #                   package: '$(Pipeline.Workspace)/dist/**/*.zip'
+  # #                   deploymentMethod: 'auto'
                     
-  #               - task: AzureAppServiceManage@0
-  #                 inputs:
-  #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
-  #                   Action: 'Swap Slots'
-  #                   WebAppName: '$(PROD_APP_NAME)'
-  #                   SourceSlot: 'staging'
-  #                   SwapWithProduction: true
-  #                 condition: succeeded()
+  # #               - task: AzureAppServiceManage@0
+  # #                 inputs:
+  # #                   azureSubscription: '$(AZURE_SUBSCRIPTION)'
+  # #                   Action: 'Swap Slots'
+  # #                   WebAppName: '$(PROD_APP_NAME)'
+  # #                   SourceSlot: 'staging'
+  # #                   SwapWithProduction: true
+  # #                 condition: succeeded()
